@@ -1,9 +1,9 @@
 /* MMM-RPiMonitor.js
- * 
+ *
  * Magic Mirror Module: MMM-RPiMonitor
  * Version: 1.0.0
- * 
- * By YourName
+ *
+ * By rxf-sys
  * MIT Licensed.
  */
 
@@ -19,7 +19,7 @@ Module.register("MMM-RPiMonitor", {
         showDiskUsage: true,
         showUptime: true,
         showLoadAverage: true,
-        animationSpeed: 1000,
+        animationSpeed: 300, // Faster animation for value updates
         tempWarning: 65, // Warning threshold in Celsius
         tempCritical: 80, // Critical threshold in Celsius
         diskWarning: 80, // Warning threshold in percent
@@ -36,6 +36,8 @@ Module.register("MMM-RPiMonitor", {
     start: function() {
         Log.info("Starting module: " + this.name);
         this.systemData = {};
+        this.domCreated = false;
+        this.dataElements = {};
         this.sendSocketNotification("START_MONITORING", this.config);
         this.scheduleUpdate();
     },
@@ -51,6 +53,23 @@ Module.register("MMM-RPiMonitor", {
             return wrapper;
         }
 
+        // Only create DOM structure once
+        if (!this.domCreated) {
+            this.createInitialDOM(wrapper);
+            this.domCreated = true;
+        } else {
+            // If DOM is already created, just update values
+            this.updateValues();
+            // Return the existing wrapper
+            return this.wrapper;
+        }
+
+        // Store wrapper reference for future updates
+        this.wrapper = wrapper;
+        return wrapper;
+    },
+
+    createInitialDOM: function(wrapper) {
         // Create header
         const header = document.createElement("header");
         header.className = "module-header";
@@ -63,71 +82,118 @@ Module.register("MMM-RPiMonitor", {
 
         // CPU Section
         if (this.config.showCPUTemp || this.config.showCPUUsage) {
-            const cpuSection = this.createSection("💻 CPU", [
-                this.config.showCPUUsage ? this.createDataRow("Usage", this.formatCPUUsage(), "cpu-usage") : null,
-                this.config.showCPUTemp ? this.createDataRow("Temperature", this.formatTemperature(this.systemData.cpuTemp), "cpu-temp") : null,
-                this.config.showLoadAverage ? this.createDataRow("Load Average", this.formatLoadAverage(), "load-avg") : null
-            ].filter(row => row !== null));
+            const cpuSection = document.createElement("div");
+            cpuSection.className = "rpi-section";
+
+            const cpuTitle = document.createElement("div");
+            cpuTitle.className = "section-title";
+            cpuTitle.innerHTML = "💻 CPU";
+            cpuSection.appendChild(cpuTitle);
+
+            if (this.config.showCPUUsage) {
+                const cpuUsageRow = this.createDataRowElement("Usage", "cpu-usage");
+                cpuSection.appendChild(cpuUsageRow);
+                this.dataElements["cpu-usage"] = cpuUsageRow.querySelector(".data-value");
+            }
+
+            if (this.config.showCPUTemp) {
+                const cpuTempRow = this.createDataRowElement("Temperature", "cpu-temp");
+                cpuSection.appendChild(cpuTempRow);
+                this.dataElements["cpu-temp"] = cpuTempRow.querySelector(".data-value");
+            }
+
+            if (this.config.showLoadAverage) {
+                const loadRow = this.createDataRowElement("Load Average", "load-avg");
+                cpuSection.appendChild(loadRow);
+                this.dataElements["load-avg"] = loadRow.querySelector(".data-value");
+            }
+
             content.appendChild(cpuSection);
         }
 
         // GPU Section
-        if (this.config.showGPUTemp && this.systemData.gpuTemp) {
-            const gpuSection = this.createSection("🎮 GPU", [
-                this.createDataRow("Temperature", this.formatTemperature(this.systemData.gpuTemp), "gpu-temp")
-            ]);
+        if (this.config.showGPUTemp) {
+            const gpuSection = document.createElement("div");
+            gpuSection.className = "rpi-section";
+
+            const gpuTitle = document.createElement("div");
+            gpuTitle.className = "section-title";
+            gpuTitle.innerHTML = "🎮 GPU";
+            gpuSection.appendChild(gpuTitle);
+
+            const gpuTempRow = this.createDataRowElement("Temperature", "gpu-temp");
+            gpuSection.appendChild(gpuTempRow);
+            this.dataElements["gpu-temp"] = gpuTempRow.querySelector(".data-value");
+
             content.appendChild(gpuSection);
         }
 
         // Memory Section
         if (this.config.showRAMUsage) {
-            const memSection = this.createSection("🧠 Memory", [
-                this.createDataRow("Usage", this.formatMemoryUsage(), "ram-usage"),
-                this.createDataRow("Free", this.formatBytes(this.systemData.memFree), "ram-free")
-            ]);
+            const memSection = document.createElement("div");
+            memSection.className = "rpi-section";
+
+            const memTitle = document.createElement("div");
+            memTitle.className = "section-title";
+            memTitle.innerHTML = "🧠 Memory";
+            memSection.appendChild(memTitle);
+
+            const memUsageRow = this.createDataRowElement("Usage", "ram-usage");
+            memSection.appendChild(memUsageRow);
+            this.dataElements["ram-usage"] = memUsageRow.querySelector(".data-value");
+
+            const memFreeRow = this.createDataRowElement("Free", "ram-free");
+            memSection.appendChild(memFreeRow);
+            this.dataElements["ram-free"] = memFreeRow.querySelector(".data-value");
+
             content.appendChild(memSection);
         }
 
         // Storage Section
         if (this.config.showDiskUsage) {
-            const diskSection = this.createSection("💾 Storage", [
-                this.createDataRow("Usage", this.formatDiskUsage(), "disk-usage"),
-                this.createDataRow("Free", this.formatBytes(this.systemData.diskFree), "disk-free")
-            ]);
+            const diskSection = document.createElement("div");
+            diskSection.className = "rpi-section";
+
+            const diskTitle = document.createElement("div");
+            diskTitle.className = "section-title";
+            diskTitle.innerHTML = "💾 Storage";
+            diskSection.appendChild(diskTitle);
+
+            const diskUsageRow = this.createDataRowElement("Usage", "disk-usage");
+            diskSection.appendChild(diskUsageRow);
+            this.dataElements["disk-usage"] = diskUsageRow.querySelector(".data-value");
+
+            const diskFreeRow = this.createDataRowElement("Free", "disk-free");
+            diskSection.appendChild(diskFreeRow);
+            this.dataElements["disk-free"] = diskFreeRow.querySelector(".data-value");
+
             content.appendChild(diskSection);
         }
 
         // System Section
         if (this.config.showUptime) {
-            const sysSection = this.createSection("⏱️ System", [
-                this.createDataRow("Uptime", this.formatUptime(), "uptime")
-            ]);
+            const sysSection = document.createElement("div");
+            sysSection.className = "rpi-section";
+
+            const sysTitle = document.createElement("div");
+            sysTitle.className = "section-title";
+            sysTitle.innerHTML = "⏱️ System";
+            sysSection.appendChild(sysTitle);
+
+            const uptimeRow = this.createDataRowElement("Uptime", "uptime");
+            sysSection.appendChild(uptimeRow);
+            this.dataElements["uptime"] = uptimeRow.querySelector(".data-value");
+
             content.appendChild(sysSection);
         }
 
         wrapper.appendChild(content);
-        return wrapper;
+
+        // Initial value update
+        this.updateValues();
     },
 
-    // Create a section with title and data rows
-    createSection: function(title, rows) {
-        const section = document.createElement("div");
-        section.className = "rpi-section";
-
-        const sectionTitle = document.createElement("div");
-        sectionTitle.className = "section-title";
-        sectionTitle.innerHTML = title;
-        section.appendChild(sectionTitle);
-
-        rows.forEach(row => {
-            if (row) section.appendChild(row);
-        });
-
-        return section;
-    },
-
-    // Create a data row with label and value
-    createDataRow: function(label, value, className) {
+    createDataRowElement: function(label, className) {
         const row = document.createElement("div");
         row.className = "data-row " + className;
 
@@ -137,12 +203,51 @@ Module.register("MMM-RPiMonitor", {
 
         const valueSpan = document.createElement("span");
         valueSpan.className = "data-value";
-        valueSpan.innerHTML = value;
+        valueSpan.innerHTML = "N/A";
 
         row.appendChild(labelSpan);
         row.appendChild(valueSpan);
 
         return row;
+    },
+
+    updateValues: function() {
+        // Update only the values, not the structure
+        if (this.dataElements["cpu-usage"]) {
+            this.dataElements["cpu-usage"].innerHTML = this.formatCPUUsage();
+        }
+
+        if (this.dataElements["cpu-temp"]) {
+            this.dataElements["cpu-temp"].innerHTML = this.formatTemperature(this.systemData.cpuTemp);
+        }
+
+        if (this.dataElements["load-avg"]) {
+            this.dataElements["load-avg"].innerHTML = this.formatLoadAverage();
+        }
+
+        if (this.dataElements["gpu-temp"]) {
+            this.dataElements["gpu-temp"].innerHTML = this.formatTemperature(this.systemData.gpuTemp);
+        }
+
+        if (this.dataElements["ram-usage"]) {
+            this.dataElements["ram-usage"].innerHTML = this.formatMemoryUsage();
+        }
+
+        if (this.dataElements["ram-free"]) {
+            this.dataElements["ram-free"].innerHTML = this.formatBytes(this.systemData.memFree);
+        }
+
+        if (this.dataElements["disk-usage"]) {
+            this.dataElements["disk-usage"].innerHTML = this.formatDiskUsage();
+        }
+
+        if (this.dataElements["disk-free"]) {
+            this.dataElements["disk-free"].innerHTML = this.formatBytes(this.systemData.diskFree);
+        }
+
+        if (this.dataElements["uptime"]) {
+            this.dataElements["uptime"].innerHTML = this.formatUptime();
+        }
     },
 
     // Formatting functions
@@ -155,7 +260,7 @@ Module.register("MMM-RPiMonitor", {
     },
 
     formatCPUUsage: function() {
-        if (!this.systemData.cpuUsage) return "N/A";
+        if (!this.systemData.cpuUsage && this.systemData.cpuUsage !== 0) return "N/A";
         const usage = this.systemData.cpuUsage.toFixed(1);
         const status = this.getCPUStatus(this.systemData.cpuUsage);
         return `<span class="${status}">${usage}%</span>`;
@@ -185,7 +290,7 @@ Module.register("MMM-RPiMonitor", {
         const days = Math.floor(this.systemData.uptime / 86400);
         const hours = Math.floor((this.systemData.uptime % 86400) / 3600);
         const minutes = Math.floor((this.systemData.uptime % 3600) / 60);
-        
+
         if (days > 0) {
             return `${days}d ${hours}h ${minutes}m`;
         } else if (hours > 0) {
@@ -239,7 +344,14 @@ Module.register("MMM-RPiMonitor", {
     socketNotificationReceived: function(notification, payload) {
         if (notification === "SYSTEM_DATA") {
             this.systemData = payload;
-            this.updateDom(this.config.animationSpeed);
+
+            if (this.domCreated) {
+                // If DOM is already created, only update values
+                this.updateValues();
+            } else {
+                // First time, create the full DOM
+                this.updateDom(this.config.animationSpeed);
+            }
         }
     },
 

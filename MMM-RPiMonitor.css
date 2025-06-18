@@ -51,6 +51,13 @@
 
 .data-value {
     font-weight: bold;
+    /* Smooth transition for value changes */
+    transition: all 0.3s ease-in-out;
+}
+
+/* Add transition to color changes */
+.data-value span {
+    transition: color 0.5s ease-in-out, opacity 0.5s ease-in-out;
 }
 
 .data-value .normal {
@@ -77,7 +84,7 @@
     .rpi-content {
         font-size: 0.9em;
     }
-    
+
     .data-row {
         font-size: 0.75em;
     }

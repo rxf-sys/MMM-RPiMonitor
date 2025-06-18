@@ -1,0 +1,30 @@
+{
+  "name": "mmm-rpimonitor",
+  "version": "1.0.0",
+  "description": "Raspberry Pi system monitor module for MagicMirror²",
+  "main": "MMM-RPiMonitor.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/rxf-sys/MMM-RPiMonitor.git"
+  },
+  "keywords": [
+    "magic mirror",
+    "magicmirror2",
+    "smart mirror",
+    "raspberry pi",
+    "system monitor",
+    "cpu monitor",
+    "temperature",
+    "module"
+  ],
+  "author": "rxf-sys",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/rxf-sys/MMM-RPiMonitor/issues"
+  },
+  "homepage": "https://github.com/rxf-sys/MMM-RPiMonitor#readme",
+  "dependencies": {}
+}
