@@ -1,0 +1,84 @@
+/* MMM-RPiMonitor.css */
+.rpi-monitor {
+    font-family: "Roboto", sans-serif;
+    color: #fff;
+}
+
+.module-header {
+    font-size: 1.2em;
+    font-weight: bold;
+    margin-bottom: 15px;
+    text-align: center;
+    border-bottom: 2px solid rgba(255, 255, 255, 0.3);
+    padding-bottom: 5px;
+}
+
+.rpi-content {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.rpi-section {
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 8px;
+    padding: 10px;
+    backdrop-filter: blur(10px);
+}
+
+.section-title {
+    font-size: 0.9em;
+    font-weight: bold;
+    margin-bottom: 8px;
+    color: #ccc;
+}
+
+.data-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 5px;
+    font-size: 0.8em;
+}
+
+.data-row:last-child {
+    margin-bottom: 0;
+}
+
+.data-label {
+    opacity: 0.8;
+}
+
+.data-value {
+    font-weight: bold;
+}
+
+.data-value .normal {
+    color: #4CAF50;
+}
+
+.data-value .warning {
+    color: #FF9800;
+}
+
+.data-value .critical {
+    color: #F44336;
+    animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+    0% { opacity: 1; }
+    50% { opacity: 0.5; }
+    100% { opacity: 1; }
+}
+
+/* Responsive design */
+@media (max-width: 400px) {
+    .rpi-content {
+        font-size: 0.9em;
+    }
+    
+    .data-row {
+        font-size: 0.75em;
+    }
+}
